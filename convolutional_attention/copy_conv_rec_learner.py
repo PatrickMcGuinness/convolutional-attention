@@ -23,7 +23,7 @@ class ConvolutionalCopyAttentionalRecurrentLearner:
         self.parameters = None
 
     def train(self, input_file, patience=5, max_epochs=1000, minibatch_size=500):
-        assert self.parameters is None, "Model is already trained"
+        # assert self.parameters is None, "Model is already trained"
         print "saving best result so far to %s"%(
             "copy_convolutional_att_rec_model" +
             os.path.basename(self.hyperparameters["train_file"]) +
@@ -289,16 +289,21 @@ if __name__ == "__main__":
     params["train_file"] = input_file
     if len(sys.argv) > 4:
         params["test_file"] = sys.argv[4]
+    model_fname = "copy_convolutional_att_rec_model" + os.path.basename(params["train_file"]) + ".pkl"
     with ExperimentLogger("ConvolutionalCopyAttentionalRecurrentLearner", params) as experiment_log:
         if max_num_epochs:
-            model = ConvolutionalCopyAttentionalRecurrentLearner(params)
+            if os.path.isfile(model_fname):
+                print "Loading", model_fname
+                model = ConvolutionalCopyAttentionalRecurrentLearner.load(model_fname)
+            else:
+                model = ConvolutionalCopyAttentionalRecurrentLearner(params)
             model.train(input_file, max_epochs=max_num_epochs)
-            model.save("copy_convolutional_att_rec_model" + os.path.basename(params["train_file"]) + ".pkl")
+            model.save(model_fname)
 
         if params.get("test_file") is None:
             exit()
 
-        model2 = ConvolutionalCopyAttentionalRecurrentLearner.load("copy_convolutional_att_rec_model" + os.path.basename(params["train_file"]) + ".pkl")
+        model2 = ConvolutionalCopyAttentionalRecurrentLearner.load(model_fname)
 
         test_data, original_names = model2.naming_data.get_data_in_recurrent_copy_convolution_format(params["test_file"], model2.padding_size)
         test_name_targets, test_code_sentences, test_code, test_target_is_unk, test_copy_vectors = test_data
